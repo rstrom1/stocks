@@ -58,27 +58,33 @@
 
     <p class="updated-timestamp"></p>
 
-    <p>Customize <a href="https://github.com/toddwschneider/stocks" target="_blank">on GitHub</p>
+    <p>Customize <a href="https://github.com/toddwschneider/stocks" target="_blank">on GitHub</a></p>
 
     <script>
       'use strict';
 
-      const PORTFOLIOS = [
+      const DEFAULT_PORTFOLIOS = [
         {'name': 'Market ETFs', 'symbols': ['SPY', 'DIA', 'QQQ', 'IWM']},
-        {'name': 'Sector ETFs', 'symbols': ['XLF', 'XLK', 'XLV', 'XLP', 'XLY', 'XLE', 'XLB', 'XLI', 'XLU', 'XLRE']},
+        {'name': 'Sector ETFs', 'symbols': ['XLF', 'XLK', 'XLC', 'XLV', 'XLP', 'XLY', 'XLE', 'XLB', 'XLI', 'XLU', 'XLRE']},
         {'name': 'Banks', 'symbols': ['GS', 'MS', 'JPM', 'WFC', 'C', 'BAC', 'BCS', 'DB', 'CS', 'RBS']},
-        {'name': 'Tech', 'symbols': ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'FB', 'TWTR', 'NFLX', 'SNAP', 'SPOT', 'DBX', 'BABA', 'INTC', 'AMD', 'NVDA', 'ORCL']},
+        {'name': 'Tech', 'symbols': ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'FB', 'TWTR', 'NFLX', 'SNAP', 'SPOT', 'DBX', 'SQ', 'SFIX', 'BABA', 'INTC', 'AMD', 'NVDA', 'ORCL']},
+        {'name': 'Cryptos', 'symbols': ['BTCUSDT', 'ETHUSDT']},
         {'name': 'Bond ETFs', 'symbols': ['BND', 'BIV', 'JNK']},
-        {'name': 'Other ETFs', 'symbols': ['VOO', 'VTI', 'VGK', 'VPL', 'VWO', 'VDE', 'XOP', 'VFH', 'VHT', 'VIG', 'VYM', 'VAW', 'REM', 'XHB', 'GLD']},
+        {'name': 'Other ETFs', 'symbols': ['VOO', 'VTI', 'VGK', 'VPL', 'VWO', 'VDE', 'XOP', 'VFH', 'VHT', 'VIG', 'VYM', 'VAW', 'REM', 'XHB', 'XRT', 'GLD', 'SHV', 'FLOT', 'BKLN', 'MJ']},
         {'name': 'Mortgage REITs', 'symbols': ['EFC', 'EARN', 'NLY', 'AGNC', 'CIM', 'TWO', 'NRZ']},
+        {'name': 'Autos', 'symbols': ['F', 'GM', 'FCAU', 'TM', 'HMC', 'TSLA']},
+        {'name': 'Airlines', 'symbols': ['DAL', 'LUV', 'UAL', 'AAL', 'ALK', 'JBLU', 'SAVE']},
         {'name': 'BigCos', 'symbols': ['XOM', 'WMT', 'JNJ', 'GE', 'T', 'KO', 'DIS', 'MCD', 'PG']}
       ];
 
+      const PORTFOLIOS = portfoliosFromQueryParams() || DEFAULT_PORTFOLIOS;
       const REFRESH_SECONDS = 10;
       const BATCH_SIZE = 100;
       const BASE_URL = 'https://api.iextrading.com/1.0/stock/market/batch';
+      const FAVICON_SYMBOL = 'SPY';
+      const FAVICON_BASE_URL = 'https://d3v3cbxkdlyonc.cloudfront.net/stocks';
 
-      let symbols = [];
+      let symbols = [FAVICON_SYMBOL];
       let containerDiv = document.querySelector('.stocks-container');
       let updatedDiv = document.querySelector('.updated-timestamp');
 
@@ -185,12 +191,29 @@
                 e.setAttribute('title', data.quote.companyName);
               });
             }
+
+            if (symbol === FAVICON_SYMBOL) {
+              updateFavicon(data.quote);
+            }
           });
         });
       }
 
+      function portfoliosFromQueryParams() {
+        if (!window.location.search) return;
+
+        let params = new URLSearchParams(window.location.search);
+        let portfolios = [];
+
+        for (let p of params) {
+          portfolios.push({'name': p[0], 'symbols': p[1].split(',')});
+        }
+
+        return portfolios;
+      }
+
       function symbolUrl(symbol) {
-        return `https://iextrading.com/apps/stocks/#/${symbol}`;
+        return `https://iextrading.com/apps/stocks/${symbol}`;
       }
 
       function formatQuote(value) {
@@ -203,6 +226,8 @@
       }
 
       function formatMarketCap(marketCap) {
+        if (marketCap === null) return '';
+
         let value, suffix;
         if (marketCap >= 1e12) {
           value = marketCap / 1e12;
@@ -218,6 +243,16 @@
         let digits = value < 10 ? 1 : 0;
 
         return '$' + value.toFixed(digits) + suffix;
+      }
+
+      function updateFavicon(quote) {
+        let favicon = document.querySelector('link[rel="icon"]');
+        let path = quote.change < 0 ? 'favicon_down.ico' : 'favicon.ico';
+        let href = `${FAVICON_BASE_URL}/${path}`;
+
+        if (favicon.getAttribute('href') !== href) {
+          favicon.setAttribute('href', href);
+        }
       }
     </script>
   </body>
